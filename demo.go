@@ -31,6 +31,13 @@ type BlockChain struct {
 	_blocks []*Block
 }
 
+func (this *BlockChain) AddBlock(data []byte) {
+	plastBlock := this._blocks[len(this._blocks)-1]
+	prevHash := plastBlock._hash
+	pblock := NewBlock(prevHash, data)
+	this._blocks = append(this._blocks, pblock)
+}
+
 func NewBlockChain() *BlockChain {
 	genesisBlock := GenesisBlock()
 	blockChain := BlockChain{
@@ -45,6 +52,7 @@ func GenesisBlock() *Block {
 
 func main() {
 	pblockChain := NewBlockChain()
+	pblockChain.AddBlock([]byte("第二个区块"))
 	for index, pblock := range pblockChain._blocks {
 		fmt.Printf("index:%d\nprevHash:%x\nhash:%x\ndata:%s\n\n", index, pblock._prevHash, pblock._hash, pblock._data)
 	}
