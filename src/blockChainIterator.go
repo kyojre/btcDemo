@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"github.com/boltdb/bolt"
 	"log"
 )
@@ -11,7 +10,7 @@ type BlockChainIterator struct {
 	_currentHashPointer []byte
 }
 
-func (this *BlockChain) NewIterator() *BlockChainIterator {
+func (this *BlockChain) Iterator() *BlockChainIterator {
 	blockChainIterator := BlockChainIterator{
 		_db:                 this._db,
 		_currentHashPointer: this._tail,
@@ -19,10 +18,15 @@ func (this *BlockChain) NewIterator() *BlockChainIterator {
 	return &blockChainIterator
 }
 
-func (this *BlockChainIterator) Next() *Block {
-	if bytes.Compare(this._currentHashPointer, []byte{}) == 0 {
-		return nil
+func (this *BlockChainIterator) HasNext() bool {
+	if len(this._currentHashPointer) == 0 {
+		return false
+	} else {
+		return true
 	}
+}
+
+func (this *BlockChainIterator) Next() *Block {
 	var buffer []byte
 	this._db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(BLOCK_CHAIN_BUCKET))
