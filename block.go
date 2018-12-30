@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"unsafe"
 )
 
 type Block struct {
@@ -30,14 +31,16 @@ func Uint64toSliceByte(input uint64) []byte {
 }
 
 func (this *Block) SetHash() {
-	blockInfo := []byte{}
-	blockInfo = append(blockInfo, Uint64toSliceByte(this._version)...)
-	blockInfo = append(blockInfo, this._prevHash...)
-	blockInfo = append(blockInfo, this._merkelRoot...)
-	blockInfo = append(blockInfo, Uint64toSliceByte(this._timestamp)...)
-	blockInfo = append(blockInfo, Uint64toSliceByte(this._difficulty)...)
-	blockInfo = append(blockInfo, Uint64toSliceByte(this._nonce)...)
-	blockInfo = append(blockInfo, this._data...)
+	tmp := [][]byte{
+		Uint64toSliceByte(this._version),
+		this._prevHash,
+		this._merkelRoot,
+		Uint64toSliceByte(this._timestamp),
+		Uint64toSliceByte(this._difficulty),
+		Uint64toSliceByte(this._nonce),
+		this._data,
+	}
+	blockInfo := bytes.Join(tmp, []byte{})
 	hash := sha256.Sum256(blockInfo)
 	this._hash = hash[:]
 }
@@ -51,6 +54,7 @@ func (this *Block) Print() {
 	fmt.Printf("nonce:%d\n", this._nonce)
 	fmt.Printf("hash:%x\n", this._hash)
 	fmt.Printf("data:%s\n", this._data)
+	fmt.Println(unsafe.Sizeof(*this))
 }
 
 func NewBlock(prevHash []byte, data []byte) *Block {
