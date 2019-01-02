@@ -136,3 +136,36 @@ func (this *BlockChain) FindNeedUTXOs(address string, amount float64) (map[strin
 	}
 	return utxos, total
 }
+
+func (this *BlockChain) FindUTXOTransactions(address string) []*Transaction {
+	var txs []*Transaction
+	spentOutputs := make(map[string]map[int64]bool)
+	for blockChainIterator := this.Iterator(); blockChainIterator.HasNext(); {
+		block := blockChainIterator.Next()
+		for _, transaction := range block.Transactions {
+			for i, output := range transaction.TXOutputs {
+				if spentOutputs[string(transaction.TXID)] != nil {
+					if spentOutputs[string(transaction.TXID)][int64(i)] {
+						continue
+					}
+				}
+				//temp
+				if output.PubKeyHash == address {
+					txs = append(txs, transaction)
+				}
+			}
+			if !transaction.IsCoinbase() {
+				for _, input := range transaction.TXInputs {
+					//temp
+					if input.Sig == address {
+						if spentOutputs[string(input.TXID)] == nil {
+							spentOutputs[string(input.TXID)] = make(map[int64]bool)
+						}
+						spentOutputs[string(input.TXID)][input.Index] = true
+					}
+				}
+			}
+		}
+	}
+	return txs
+}

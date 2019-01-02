@@ -29,7 +29,11 @@ func (this *Block) Serialize() []byte {
 }
 
 func (this *Block) MakeMerkelRoot() {
-	this.MerkelRoot = []byte{}
+	var info []byte
+	for _, transaction := range this.Transactions {
+		info = append(info, transaction.TXID...)
+	}
+	this.MerkelRoot = info
 }
 
 func NewBlock(prevHash []byte, Transactions []*Transaction) *Block {
