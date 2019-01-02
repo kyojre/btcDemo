@@ -29,7 +29,7 @@ func (this *BlockChain) AddBlock(transactions []*Transaction) {
 	})
 }
 
-func NewBlockChain(address string) *BlockChain {
+func NewBlockChain(address string, data string) *BlockChain {
 	db, err := bolt.Open(BLOCK_CHAIN_DB, 0600, nil)
 	if err != nil {
 		log.Panic(err)
@@ -43,7 +43,7 @@ func NewBlockChain(address string) *BlockChain {
 			if err != nil {
 				log.Panic(err)
 			}
-			genesisBlock := GenesisBlock(address)
+			genesisBlock := GenesisBlock(address, data)
 			tail = genesisBlock.Hash
 			bucket.Put(genesisBlock.Hash, genesisBlock.Serialize())
 			bucket.Put([]byte("tail"), tail)
@@ -59,24 +59,21 @@ func NewBlockChain(address string) *BlockChain {
 	return &blockChain
 }
 
-func GenesisBlock(address string) *Block {
-	coinbase := NewCoinbaseTX(address)
+func GenesisBlock(address string, data string) *Block {
+	coinbase := NewCoinbaseTX(address, data)
 	return NewBlock([]byte{}, []*Transaction{coinbase})
 }
 
 func (this *BlockChain) FindUTXOs(address string) []TXOutput {
 	var utxos []TXOutput
-	spentOutputs := make(map[string][]int64)
+	spentOutputs := make(map[string]map[int64]bool)
 	for blockChainIterator := this.Iterator(); blockChainIterator.HasNext(); {
 		block := blockChainIterator.Next()
 		for _, transaction := range block.Transactions {
-		OUTPUT:
 			for i, output := range transaction.TXOutputs {
 				if spentOutputs[string(transaction.TXID)] != nil {
-					for _, j := range spentOutputs[string(transaction.TXID)] {
-						if int64(i) == j {
-							continue OUTPUT
-						}
+					if spentOutputs[string(transaction.TXID)][int64(i)] {
+						continue
 					}
 				}
 				//temp
@@ -88,8 +85,10 @@ func (this *BlockChain) FindUTXOs(address string) []TXOutput {
 				for _, input := range transaction.TXInputs {
 					//temp
 					if input.Sig == address {
-						indexArray := spentOutputs[string(input.TXID)]
-						indexArray = append(indexArray, input.Index)
+						if spentOutputs[string(input.TXID)] == nil {
+							spentOutputs[string(input.TXID)] = make(map[int64]bool)
+						}
+						spentOutputs[string(input.TXID)][input.Index] = true
 					}
 				}
 			}
@@ -97,4 +96,43 @@ func (this *BlockChain) FindUTXOs(address string) []TXOutput {
 
 	}
 	return utxos
+}
+
+func (this *BlockChain) FindNeedUTXOs(address string, amount float64) (map[string][]int64, float64) {
+	utxos := make(map[string][]int64)
+	var total float64 = 0.0
+	spentOutputs := make(map[string]map[int64]bool)
+	for blockChainIterator := this.Iterator(); blockChainIterator.HasNext(); {
+		block := blockChainIterator.Next()
+		for _, transaction := range block.Transactions {
+			for i, output := range transaction.TXOutputs {
+				if spentOutputs[string(transaction.TXID)] != nil {
+					if spentOutputs[string(transaction.TXID)][int64(i)] {
+						continue
+					}
+				}
+				//temp
+				if output.PubKeyHash == address {
+					utxos[string(transaction.TXID)] = append(utxos[string(transaction.TXID)], int64(i))
+					total += output.Value
+					if total >= amount {
+						return utxos, total
+					}
+				}
+			}
+			if !transaction.IsCoinbase() {
+				for _, input := range transaction.TXInputs {
+					//temp
+					if input.Sig == address {
+						if spentOutputs[string(input.TXID)] == nil {
+							spentOutputs[string(input.TXID)] = make(map[int64]bool)
+						}
+						spentOutputs[string(input.TXID)][input.Index] = true
+					}
+				}
+			}
+		}
+
+	}
+	return utxos, total
 }

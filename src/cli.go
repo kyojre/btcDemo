@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 )
 
 const USAGE = `
-	addBlock --data DATA	 	"add data to blockChain"
-	printChain		 	"print all blockChain data"
-	getBalance --address ADDRESS	"get balance of address"
+	printChain			"print all blockChain data"
+	getBalance ADDRESS		"get balance of address"
+	send FROM TO AMOUNT MINER DATA
 `
 
 type CLI struct {
@@ -24,13 +25,6 @@ func (this *CLI) Run() {
 
 	cmd := args[1]
 	switch cmd {
-	case "addBlock":
-		if len(args) < 3 {
-			fmt.Printf(USAGE)
-			return
-		}
-		blockData := args[2]
-		this.AddBlock(blockData)
 	case "printChain":
 		this.PrintBlockChain()
 	case "getBalance":
@@ -40,6 +34,17 @@ func (this *CLI) Run() {
 		}
 		address := args[2]
 		this.GetBalance(address)
+	case "send":
+		if len(args) < 6 {
+			fmt.Printf(USAGE)
+			return
+		}
+		from := args[2]
+		to := args[3]
+		amount, _ := strconv.ParseFloat(args[4], 64)
+		miner := args[5]
+		data := args[6]
+		this.Send(from, to, amount, miner, data)
 	default:
 		fmt.Printf(USAGE)
 	}

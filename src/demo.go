@@ -2,10 +2,8 @@ package main
 
 import ()
 
-const address = "demo"
-
 func main() {
-	blockChain := NewBlockChain(address)
+	blockChain := NewBlockChain("demo", "first")
 	cli := CLI{
 		_blockChain: blockChain,
 	}

@@ -48,7 +48,7 @@ func (this *Transaction) IsCoinbase() bool {
 	return false
 }
 
-func NewCoinbaseTX(address string) *Transaction {
+func NewCoinbaseTX(address string, data string) *Transaction {
 	//挖矿交易的特点：
 	//1.只有一个input
 	//2.无需引用交易ID
@@ -57,16 +57,56 @@ func NewCoinbaseTX(address string) *Transaction {
 	input := TXInput{
 		TXID:  []byte{},
 		Index: -1,
-		Sig:   "helloWorld",
+		Sig:   data,
 	}
 	output := TXOutput{
 		Value:      reward,
-		PubKeyHash: address,
+		PubKeyHash: address, //temp
 	}
 	transaction := Transaction{
 		TXID:      []byte{},
 		TXInputs:  []TXInput{input},
 		TXOutputs: []TXOutput{output},
+	}
+	transaction.SetHash()
+	return &transaction
+}
+
+func NewTransaction(from string, to string, amount float64, blockChain *BlockChain) *Transaction {
+	utxos, resValue := blockChain.FindNeedUTXOs(from, amount)
+
+	if resValue < amount {
+		return nil
+	}
+
+	var inputs []TXInput
+	var outputs []TXOutput
+
+	for id, indexArray := range utxos {
+		for _, i := range indexArray {
+			input := TXInput{
+				TXID:  []byte(id),
+				Index: i,
+				Sig:   from, //temp
+			}
+			inputs = append(inputs, input)
+		}
+	}
+	output := TXOutput{
+		Value:      amount,
+		PubKeyHash: to, //temp
+	}
+	outputs = append(outputs, output)
+	if resValue > amount {
+		outputs = append(outputs, TXOutput{
+			Value:      resValue - amount,
+			PubKeyHash: from, //temp
+		})
+	}
+	transaction := Transaction{
+		TXID:      []byte{},
+		TXInputs:  inputs,
+		TXOutputs: outputs,
 	}
 	transaction.SetHash()
 	return &transaction

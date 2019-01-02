@@ -4,13 +4,6 @@ import (
 	"fmt"
 )
 
-func (this *CLI) AddBlock(data string) {
-	/*
-		transactions :=  make([]*Transaction)
-		this._blockChain.AddBlock(transactions)
-	*/
-}
-
 func (this *Block) Print() {
 	fmt.Printf("version:%d\n", this.Version)
 	fmt.Printf("prevHash:%x\n", this.PrevHash)
@@ -57,4 +50,17 @@ func (this *CLI) GetBalance(address string) {
 		total += utxo.Value
 	}
 	fmt.Printf("balance:%f\n", total)
+}
+
+func (this *CLI) Send(from string, to string, amount float64, miner string, data string) {
+	transaction := NewTransaction(from, to, amount, this._blockChain)
+	if transaction == nil {
+		fmt.Printf("no_transaction\n")
+		return
+	}
+	coinbaseTX := NewCoinbaseTX(miner, data)
+	var transactions []*Transaction
+	transactions = append(transactions, coinbaseTX)
+	transactions = append(transactions, transaction)
+	this._blockChain.AddBlock(transactions)
 }
