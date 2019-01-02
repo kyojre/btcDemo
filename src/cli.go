@@ -6,8 +6,9 @@ import (
 )
 
 const USAGE = `
-	addBlock --data DATA	 "add data to blockChain"
-	printChain		 "print all blockChain data"
+	addBlock --data DATA	 	"add data to blockChain"
+	printChain		 	"print all blockChain data"
+	getBalance --address ADDRESS	"get balance of address"
 `
 
 type CLI struct {
@@ -32,6 +33,13 @@ func (this *CLI) Run() {
 		this.AddBlock(blockData)
 	case "printChain":
 		this.PrintBlockChain()
+	case "getBalance":
+		if len(args) < 3 {
+			fmt.Printf(USAGE)
+			return
+		}
+		address := args[2]
+		this.GetBalance(address)
 	default:
 		fmt.Printf(USAGE)
 	}

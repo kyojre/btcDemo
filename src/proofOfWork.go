@@ -25,7 +25,6 @@ func (this *ProofOfWork) Run() ([]byte, uint64) {
 			Uint64toSliceByte(block.Timestamp),
 			Uint64toSliceByte(block.Difficulty),
 			Uint64toSliceByte(nonce),
-			block.Data,
 		}
 		blockInfo := bytes.Join(tmp, []byte{})
 		hash = sha256.Sum256(blockInfo)

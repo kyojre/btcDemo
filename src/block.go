@@ -3,20 +3,19 @@ package main
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"log"
 	"time"
 )
 
 type Block struct {
-	Version    uint64
-	PrevHash   []byte
-	MerkelRoot []byte
-	Timestamp  uint64
-	Difficulty uint64
-	Nonce      uint64
-	Hash       []byte
-	Data       []byte
+	Version      uint64
+	PrevHash     []byte
+	MerkelRoot   []byte
+	Timestamp    uint64
+	Difficulty   uint64
+	Nonce        uint64
+	Hash         []byte
+	Transactions []*Transaction
 }
 
 func (this *Block) Serialize() []byte {
@@ -29,28 +28,22 @@ func (this *Block) Serialize() []byte {
 	return buffer.Bytes()
 }
 
-func (this *Block) Print() {
-	fmt.Printf("version:%d\n", this.Version)
-	fmt.Printf("prevHash:%x\n", this.PrevHash)
-	fmt.Printf("merkelRoot:%x\n", this.MerkelRoot)
-	fmt.Printf("timestamp:%d\n", this.Timestamp)
-	fmt.Printf("difficulty:%d\n", this.Difficulty)
-	fmt.Printf("nonce:%d\n", this.Nonce)
-	fmt.Printf("hash:%x\n", this.Hash)
-	fmt.Printf("data:%s\n", this.Data)
+func (this *Block) MakeMerkelRoot() {
+	this.MerkelRoot = []byte{}
 }
 
-func NewBlock(prevHash []byte, data []byte) *Block {
+func NewBlock(prevHash []byte, Transactions []*Transaction) *Block {
 	block := Block{
-		Version:    1,
-		PrevHash:   prevHash,
-		MerkelRoot: []byte{},
-		Timestamp:  uint64(time.Now().Unix()),
-		Difficulty: 1,
-		Nonce:      0,
-		Hash:       []byte{},
-		Data:       data,
+		Version:      1,
+		PrevHash:     prevHash,
+		Timestamp:    uint64(time.Now().Unix()),
+		Difficulty:   1,
+		Nonce:        0,
+		Hash:         []byte{},
+		Transactions: Transactions,
 	}
+	block.MakeMerkelRoot()
+
 	pow := NewProofOfWork(&block)
 	hash, nonce := pow.Run()
 	block.Hash = hash
