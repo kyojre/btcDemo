@@ -45,6 +45,10 @@ func (this *CLI) PrintBlockChain() {
 }
 
 func (this *CLI) GetBalance(address string) {
+	if !IsValidAddress(address) {
+		fmt.Printf("NotValidAddress\n")
+		return
+	}
 	pubKeyHash := GetPubKeyHashByAddress(address)
 	utxos := this._blockChain.FindUTXOs(pubKeyHash)
 	total := 0.0
@@ -55,6 +59,18 @@ func (this *CLI) GetBalance(address string) {
 }
 
 func (this *CLI) Send(from string, to string, amount float64, miner string, data string) {
+	if !IsValidAddress(from) {
+		fmt.Printf("NotValidAddress\n")
+		return
+	}
+	if !IsValidAddress(to) {
+		fmt.Printf("NotValidAddress\n")
+		return
+	}
+	if !IsValidAddress(miner) {
+		fmt.Printf("NotValidAddress\n")
+		return
+	}
 	transaction := NewTransaction(from, to, amount, this._blockChain)
 	if transaction == nil {
 		fmt.Printf("no_transaction\n")

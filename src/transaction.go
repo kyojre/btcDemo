@@ -2,10 +2,11 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
-	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/ripemd160"
 	"log"
 )
@@ -28,13 +29,6 @@ type TXInput struct {
 type TXOutput struct {
 	Value      float64
 	PubKeyHash []byte
-}
-
-func GetPubKeyHashByAddress(address string) []byte {
-	//check todo
-	addressByte := base58.Decode(address)
-	addressLen := len(addressByte)
-	return addressByte[1 : addressLen-4]
 }
 
 func (this *TXOutput) Lock(address string) {
@@ -146,5 +140,50 @@ func NewTransaction(from string, to string, amount float64, blockChain *BlockCha
 		TXOutputs: outputs,
 	}
 	transaction.SetHash()
+
+	blockChain.SignTransaction(&transaction, fromWallet.PriKey)
+
 	return &transaction
+}
+
+func (this *Transaction) Sign(privateKey *ecdsa.PrivateKey, prevTXs map[string]*Transaction) {
+	txCopy := this.TrimmedCopy()
+	for i, input := range txCopy.TXInputs {
+		prevTx := prevTXs[string(input.TXID)]
+		txCopy.TXInputs[i].PubKey = prevTx.TXOutputs[input.Index].PubKeyHash
+		txCopy.SetHash()
+		txCopy.TXInputs[i].PubKey = nil
+		signData := txCopy.TXID
+
+		r, s, err := ecdsa.Sign(rand.Reader, privateKey, signData)
+		if err != nil {
+			log.Panic(err)
+		}
+		signature := append(r.Bytes(), s.Bytes()...)
+		this.TXInputs[i].Sig = signature
+	}
+}
+
+func (this *Transaction) TrimmedCopy() Transaction {
+	var inputs []TXInput
+	var outputs []TXOutput
+	for _, input := range this.TXInputs {
+		inputs = append(inputs, TXInput{
+			TXID:   input.TXID,
+			Index:  input.Index,
+			Sig:    nil,
+			PubKey: nil,
+		})
+	}
+	for _, output := range this.TXOutputs {
+		outputs = append(outputs, TXOutput{
+			Value:      output.Value,
+			PubKeyHash: output.PubKeyHash,
+		})
+	}
+	return Transaction{
+		TXID:      this.TXID,
+		TXInputs:  inputs,
+		TXOutputs: outputs,
+	}
 }

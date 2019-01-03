@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"github.com/boltdb/bolt"
 	"log"
 )
@@ -163,4 +164,28 @@ func (this *BlockChain) FindUTXOTransactions(pubKeyHash []byte) []*Transaction {
 		}
 	}
 	return txs
+}
+
+func (this *BlockChain) FindTransactionByTXid(TXID []byte) *Transaction {
+	for blockChainIterator := this.Iterator(); blockChainIterator.HasNext(); {
+		block := blockChainIterator.Next()
+		for _, transaction := range block.Transactions {
+			if bytes.Equal(transaction.TXID, TXID) {
+				return transaction
+			}
+		}
+	}
+	return nil
+}
+
+func (this *BlockChain) SignTransaction(transaction *Transaction, privateKey *ecdsa.PrivateKey) {
+	prevTXs := make(map[string]*Transaction)
+	for _, input := range transaction.TXInputs {
+		tx := this.FindTransactionByTXid(input.TXID)
+		if tx == nil {
+			log.Panic("no_tx")
+		}
+		prevTXs[string(input.TXID)] = tx
+	}
+	transaction.Sign(privateKey, prevTXs)
 }
