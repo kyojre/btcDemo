@@ -16,6 +16,14 @@ type BlockChain struct {
 }
 
 func (this *BlockChain) AddBlock(transactions []*Transaction) {
+	for _, transaction := range transactions {
+		res := this.VerifyTransaction(transaction)
+		if !res {
+			//log.Panic("verify_false")
+			return
+		}
+	}
+
 	this._db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(BLOCK_CHAIN_BUCKET))
 		if bucket == nil {
@@ -188,4 +196,19 @@ func (this *BlockChain) SignTransaction(transaction *Transaction, privateKey *ec
 		prevTXs[string(input.TXID)] = tx
 	}
 	transaction.Sign(privateKey, prevTXs)
+}
+
+func (this *BlockChain) VerifyTransaction(transaction *Transaction) bool {
+	if transaction.IsCoinbase() {
+		return true
+	}
+	prevTXs := make(map[string]*Transaction)
+	for _, input := range transaction.TXInputs {
+		tx := this.FindTransactionByTXid(input.TXID)
+		if tx == nil {
+			log.Panic("no_tx")
+		}
+		prevTXs[string(input.TXID)] = tx
+	}
+	return transaction.Verify(prevTXs)
 }

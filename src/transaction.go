@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"golang.org/x/crypto/ripemd160"
 	"log"
+	"math/big"
 )
 
 const reward = 50.0
@@ -69,7 +71,7 @@ func HashPubKey(pubKey []byte) []byte {
 func (this *Transaction) IsCoinbase() bool {
 	if len(this.TXInputs) == 1 {
 		input := this.TXInputs[0]
-		if bytes.Equal(input.TXID, []byte{}) && input.Index != -1 {
+		if bytes.Equal(input.TXID, []byte{}) && input.Index == -1 {
 			return true
 		}
 	}
@@ -147,6 +149,9 @@ func NewTransaction(from string, to string, amount float64, blockChain *BlockCha
 }
 
 func (this *Transaction) Sign(privateKey *ecdsa.PrivateKey, prevTXs map[string]*Transaction) {
+	if this.IsCoinbase() {
+		return
+	}
 	txCopy := this.TrimmedCopy()
 	for i, input := range txCopy.TXInputs {
 		prevTx := prevTXs[string(input.TXID)]
@@ -186,4 +191,44 @@ func (this *Transaction) TrimmedCopy() Transaction {
 		TXInputs:  inputs,
 		TXOutputs: outputs,
 	}
+}
+
+func (this *Transaction) Verify(prevTXs map[string]*Transaction) bool {
+	if this.IsCoinbase() {
+		return true
+	}
+	txCopy := this.TrimmedCopy()
+	for i, input := range this.TXInputs {
+		prevTx := prevTXs[string(input.TXID)]
+		txCopy.TXInputs[i].PubKey = prevTx.TXOutputs[input.Index].PubKeyHash
+		txCopy.SetHash()
+		txCopy.TXInputs[i].PubKey = nil
+		signData := txCopy.TXID
+
+		signature := input.Sig
+		sigLen := len(signature)
+		r := big.Int{}
+		s := big.Int{}
+		r.SetBytes(signature[:sigLen/2])
+		s.SetBytes(signature[sigLen/2:])
+
+		pubKey := input.PubKey
+		keyLen := len(pubKey)
+		x := big.Int{}
+		y := big.Int{}
+		x.SetBytes(pubKey[:keyLen/2])
+		y.SetBytes(pubKey[keyLen/2:])
+
+		pubKeyOrigin := ecdsa.PublicKey{
+			Curve: elliptic.P256(),
+			X:     &x,
+			Y:     &y,
+		}
+
+		res := ecdsa.Verify(&pubKeyOrigin, signData, &r, &s)
+		if !res {
+			return false
+		}
+	}
+	return true
 }
