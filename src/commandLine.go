@@ -64,3 +64,10 @@ func (this *CLI) Send(from string, to string, amount float64, miner string, data
 	transactions = append(transactions, transaction)
 	this._blockChain.AddBlock(transactions)
 }
+
+func (this *CLI) NewWallet() {
+	wallet := NewWallet()
+	fmt.Printf("priKey:%v\n", wallet.PriKey)
+	fmt.Printf("pubKey:%x\n", wallet.PubKey)
+	fmt.Printf("address:%s\n", wallet.NewAddress())
+}
