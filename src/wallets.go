@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"io/ioutil"
 	"log"
+	"os"
 )
 
 const walletFileName = "../db/wallets.dat"
@@ -46,10 +47,11 @@ func (this *Wallets) SaveToFile() {
 }
 
 func (this *Wallets) LoadFile() {
-	buffer, err := ioutil.ReadFile(walletFileName)
-	if buffer == nil {
+	_, err := os.Stat(walletFileName)
+	if os.IsNotExist(err) {
 		return
 	}
+	buffer, err := ioutil.ReadFile(walletFileName)
 	if err != nil {
 		log.Panic(err)
 	}

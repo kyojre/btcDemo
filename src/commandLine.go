@@ -21,14 +21,15 @@ func (this *Block) Print() {
 			fmt.Printf("		inputIndex:%d\n", inputIndex)
 			fmt.Printf("		txid:%x\n", input.TXID)
 			fmt.Printf("		index:%d\n", input.Index)
-			fmt.Printf("		sig:%s\n", input.Sig)
+			fmt.Printf("		sig:%x\n", input.Sig)
+			fmt.Printf("		pubKey:%x\n", input.PubKey)
 			fmt.Printf("		----\n")
 		}
 		fmt.Printf("	TXOutputs\n")
 		for outputIndex, output := range transaction.TXOutputs {
 			fmt.Printf("		outputIndex:%d\n", outputIndex)
 			fmt.Printf("		value:%f\n", output.Value)
-			fmt.Printf("		pubKeyHash:%s\n", output.PubKeyHash)
+			fmt.Printf("		pubKeyHash:%x\n", output.PubKeyHash)
 			fmt.Printf("		----\n")
 		}
 		fmt.Printf("	----\n")
@@ -44,7 +45,15 @@ func (this *CLI) PrintBlockChain() {
 }
 
 func (this *CLI) GetBalance(address string) {
-	utxos := this._blockChain.FindUTXOs(address)
+	wallets := NewWallets()
+	wallet := wallets.WalletsMap[address]
+	if wallet == nil {
+		fmt.Printf("no_wallet\n")
+		return
+	}
+	pubKey := wallet.PubKey
+	pubKeyHash := HashPubKey(pubKey)
+	utxos := this._blockChain.FindUTXOs(pubKeyHash)
 	total := 0.0
 	for _, utxo := range utxos {
 		total += utxo.Value
