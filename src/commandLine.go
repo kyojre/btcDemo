@@ -45,14 +45,7 @@ func (this *CLI) PrintBlockChain() {
 }
 
 func (this *CLI) GetBalance(address string) {
-	wallets := NewWallets()
-	wallet := wallets.WalletsMap[address]
-	if wallet == nil {
-		fmt.Printf("no_wallet\n")
-		return
-	}
-	pubKey := wallet.PubKey
-	pubKeyHash := HashPubKey(pubKey)
+	pubKeyHash := GetPubKeyHashByAddress(address)
 	utxos := this._blockChain.FindUTXOs(pubKeyHash)
 	total := 0.0
 	for _, utxo := range utxos {

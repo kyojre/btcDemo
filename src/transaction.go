@@ -30,10 +30,15 @@ type TXOutput struct {
 	PubKeyHash []byte
 }
 
-func (this *TXOutput) Lock(address string) {
+func GetPubKeyHashByAddress(address string) []byte {
+	//check todo
 	addressByte := base58.Decode(address)
 	addressLen := len(addressByte)
-	this.PubKeyHash = addressByte[1 : addressLen-4]
+	return addressByte[1 : addressLen-4]
+}
+
+func (this *TXOutput) Lock(address string) {
+	this.PubKeyHash = GetPubKeyHashByAddress(address)
 }
 
 func NewTXOutput(value float64, address string) *TXOutput {
