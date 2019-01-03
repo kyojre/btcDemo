@@ -65,9 +65,17 @@ func (this *CLI) Send(from string, to string, amount float64, miner string, data
 	this._blockChain.AddBlock(transactions)
 }
 
-func (this *CLI) NewWallet() {
-	wallet := NewWallet()
-	fmt.Printf("priKey:%v\n", wallet.PriKey)
-	fmt.Printf("pubKey:%x\n", wallet.PubKey)
-	fmt.Printf("address:%s\n", wallet.NewAddress())
+func (this *CLI) PrintWallets() {
+	wallets := NewWallets()
+	for address, wallet := range wallets.WalletsMap {
+		fmt.Printf("address:%s\n", address)
+		fmt.Printf("priKey:%v\n", wallet.PriKey)
+		fmt.Printf("pubKey:%x\n", wallet.PubKey)
+		fmt.Printf("----\n")
+	}
+}
+
+func (this *CLI) CreateWallet() {
+	wallets := NewWallets()
+	wallets.CreateWallet()
 }

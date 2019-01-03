@@ -6,10 +6,11 @@ import (
 	"strconv"
 )
 
-const USAGE = `	printChain			"print all blockChain data"
-	getBalance ADDRESS		"get balance of address"
+const USAGE = `	printChain
+	getBalance ADDRES
 	send FROM TO AMOUNT MINER DATA
-	newWallet
+	printWallets
+	createWallets
 `
 
 type CLI struct {
@@ -45,8 +46,10 @@ func (this *CLI) Run() {
 		miner := args[5]
 		data := args[6]
 		this.Send(from, to, amount, miner, data)
-	case "newWallet":
-		this.NewWallet()
+	case "printWallets":
+		this.PrintWallets()
+	case "createWallet":
+		this.CreateWallet()
 	default:
 		fmt.Printf(USAGE)
 	}
